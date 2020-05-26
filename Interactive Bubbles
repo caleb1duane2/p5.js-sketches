@@ -1,0 +1,196 @@
+Link to working code with visual:
+https://editor.p5js.org/Caleb1Duane2/sketches/JdU_vM4_j
+
+//this was an idea I had for an interactive screensaver.
+//uses sound as well as Gui
+
+let guiControls;
+
+/* ------- Background Gradient Variables --------- */
+const Y_AXIS = 1;
+const X_AXIS = 2;
+let midColor1, midColor2, topColor1, topColor2;
+let backgroundColor = [250, 247, 221];
+
+/* ------------ Bubbles Variables ---------------- */
+let numberOfBubbles = 100;
+let arrBubbles = [];
+let rBack = 207;
+let gBack = 207;
+let bBack = 196;
+let bubblePop;
+let bubblePopped = 0;
+let directSwitchMax = 300
+
+/* ------------ Bubbles Class ---------------- */
+class bubble {
+  constructor() {
+    //direction controls
+    this.directionSwitcher = random(0, directSwitchMax);
+    this.floatSpeed = random(2.0, 4.5);
+    this.xMovementPos = random(0.15, 0.25);
+    this.xMovementNeg = this.xMovementPos * -1;
+
+    //pop and sound
+    this.pop = false;
+    this.sound = false;
+
+    //Bubble Body
+    this.bubbleColor = color(173, 216, 240, 210);
+    this.size = random(50, 75)
+    this.x = random(0 + this.size, width - this.size);
+    //this.y = height + this.size;]
+    this.y = random(height + this.size, height * 5);
+
+    //Main bubble reflection
+    this.mainReflColor = color(245, 210)
+    this.mainReflX = this.x - this.size / 5;
+    this.mainReflY = this.y - this.size / 4;
+    this.mainReflSizeX = this.size / 2.5;
+    this.mainReflSizeY = this.size / 6;
+
+    //Minor Bubble Reflection
+    this.minorReflColor = color(255, 215);
+    this.minorReflX = this.mainReflX - this.size / 19;
+    this.minorReflY = this.mainReflY - this.size / 25;
+    this.minorReflSizeX = this.mainReflSizeX / 1.5;
+    this.minorReflSizeY = this.mainReflSizeY / 2;
+  }
+
+  floatUpward() { //sets the bubbles to reset after going off the top of the screen
+    if (this.y < 0 - this.size) {
+      this.y = random(height + this.size, height + height / 2);
+      this.mainReflY = this.y - this.size / 4;
+      this.minorReflY = this.mainReflY - this.size / 25;
+    }
+    if (this.directionSwitcher <= directSwitchMax / 2) {
+      this.x += this.xMovementPos;
+      this.mainReflX += this.xMovementPos;
+      this.minorReflX += this.xMovementPos;
+    }
+    if (this.directionSwitcher > directSwitchMax / 2) {
+      this.x += this.xMovementNeg;
+      this.mainReflX += this.xMovementNeg;
+      this.minorReflX += this.xMovementNeg;
+    }
+    if (this.directionSwitcher >= directSwitchMax) {
+      this.directionSwitcher = 0;
+    }
+    this.directionSwitcher += 1;
+    this.y -= this.floatSpeed;
+    this.mainReflY -= this.floatSpeed;
+    this.minorReflY -= this.floatSpeed;
+  }
+
+  popBubble() {
+    let mouseDistance = dist(mouseX, mouseY, this.x, this.y);
+    if (mouseDistance < this.size / 2) { //the radius
+      this.pop = true;
+      if (this.sound == false) {
+        bubblePop.play()
+        this.sound = true;
+        bubblePopped += 1;
+        //print(bubblePopped);
+      }
+    }
+  }
+
+  display() {
+    this.popBubble();
+    if (!this.pop) {
+      //Bubble body
+      noStroke();
+      fill(this.bubbleColor);
+      ellipse(this.x, this.y, this.size); // the bubble
+      //Main Reflection
+      fill(this.mainReflColor);
+      ellipse(this.mainReflX, this.mainReflY, this.mainReflSizeX, this.mainReflSizeY);
+      //Minor Reflection
+      //stroke(0);
+      fill(this.minorReflColor);
+      ellipse(this.minorReflX,this.minorReflY,this.minorReflSizeX,this.minorReflSizeY);
+      this.floatUpward();
+    }
+  }
+}
+
+/* ------------ END Bubbles Class ---------------- */
+function setGradient(x, y, w, h, c1, c2, axis) {
+  noFill();
+  if (axis === Y_AXIS) {
+    // Top to bottom gradient
+    for (let i = y; i <= y + h; i++) {
+      let inter = map(i, y, y + h, 0, 1);
+      let c = lerpColor(c1, c2, inter);
+      stroke(c);
+      line(x, i, x + w, i);
+    }
+  } else if (axis === X_AXIS) {
+    // Left to right gradient
+    for (let i = x; i <= x + w; i++) {
+      let inter = map(i, x, x + w, 0, 1);
+      let c = lerpColor(c1, c2, inter);
+      stroke(c);
+      line(i, y, i, y + h);
+    }
+  }
+}
+
+function preload() {
+  bubblePop = loadSound("bubblePopSound.wav"); // sound file 
+}
+
+function setup() {
+  frameRate(50);
+  guiControls = {
+    bubbleSize: random(50, 75),
+    bubbleColor: [173, 216, 240, 100],
+    //backgroundColor: [250, 247, 221],
+    amountPerWave: 100
+  };
+
+  /* --- gradient setup --- */
+  let colorArr = [color(238, 156, 167), color(115, 75, 109), color(44, 62, 80)]
+  midColor1 = color(255);
+  midColor2 = color(0);
+  topColor = color(255, 221, 225);
+  botColor = random(colorArr);
+
+  noStroke();
+  colorMode(RGB)
+  createCanvas(windowWidth, windowHeight);
+  // background(backgroundColor); // might be the bubble color
+
+  let gui = new dat.GUI();
+  //gui.addColor(guiControls, 'backgroundColor');
+  gui.add(guiControls, 'amountPerWave', 25, 250);
+
+  for (let i = 0; i < numberOfBubbles; i++) {
+    arrBubbles[i] = new bubble();
+    arrBubbles[i].directionSwitcher = random(0, 100);
+  }
+}
+
+function draw() {
+  /*------------ Background Gradient Draw Code ---------------- */
+  setGradient(0, 0, width, height, midColor1, midColor2, X_AXIS);
+  setGradient(width, 0, width, height, midColor2, midColor1, X_AXIS);
+  setGradient(0, 0, width, height, topColor, botColor, Y_AXIS);
+  setGradient(width, 0, width, height, botColor, topColor, X_AXIS);
+  // background(backgroundColor);
+
+  /*------------ Bubbles Draw Code ---------------- */
+  for (let i = 0; i < numberOfBubbles; i++) {
+    arrBubbles[i].display();
+  }
+  if (bubblePopped >= numberOfBubbles) {
+    //print("we in the bubble pop loop");
+    numberOfBubbles = guiControls.amountPerWave;
+    for (let i = 0; i < numberOfBubbles; i++) {
+      arrBubbles[i] = new bubble();
+      // arrBubbles[i].pop = false;
+      // arrBubbles[i].sound = false;
+    }
+    bubblePopped = 0;
+  }
+}
