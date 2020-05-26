@@ -79,7 +79,6 @@ function draw() {
     noLoop();
     print("done painting");
   }
-
   // function mousePressed() {
   //   if (looping == 0) {
   //     loop();
