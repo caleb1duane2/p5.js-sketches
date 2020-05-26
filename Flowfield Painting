@@ -1,0 +1,155 @@
+link to working editor and code:
+https://editor.p5js.org/Caleb1Duane2/sketches/y91QYf4eI
+
+The particle class is in a different script I will paste at the bottom of this code.
+
+Code starts:
+
+var looping = 1;
+var inc = 0.1
+var scl = 10;
+var columns, rows;
+var zOff = 0;
+var particles = [];
+var flowfield;
+
+/* ---- Interactable Variables for outcome ---- */
+//plan to make a version with sliders/UI.
+var runTime = 550;
+var amountOfParticles = 50;
+var magni = 5;
+var zInc = 0.0003
+var vMaxSpeed = 1;
+var particleOpacity = 0.75;
+var particleStroke = 4;
+
+function setup() {
+  createCanvas(windowHeight, windowWidth);
+  background(255);
+  /* --- creates a grid based on the scl --- */
+  columns = floor(width / scl);
+  rows = floor(height / scl);
+  
+  pixelDensity(1);
+  noiseDetail(8);
+
+  /* --- creates an array for each vector based on the grid ---*/
+  flowfield = new Array(columns * rows);
+
+  /* --- to view my custom particle class click on the arrow under play --- */
+  for (let i = 0; i < amountOfParticles; i++) {
+    particles[i] = new Particle();
+  }
+}
+
+function draw() {
+  var yOff = 0;
+
+  for (var y = 0; y < rows; y++) {
+    var xOff = 0;
+    for (x = 0; x < columns; x++) {
+      var index = (x + y * columns); //set up the index for the custom arr
+      var angle = noise(xOff, yOff, zOff) * TWO_PI * 4; //randomize vector angles
+      var cVect = p5.Vector.fromAngle(angle); //create a vector from the angles given
+      cVect.setMag(magni); //set the magnitude of vector
+      flowfield[index] = cVect; //store vector in arr for particles later
+      xOff += inc;
+      
+      /* ------ lines that represent the vects that influence the particles ----- */
+      //background(255);
+      // push();
+      // stroke(0, 20);
+      // translate(x * scl, y * scl);
+      // rotate(cVect.heading());
+      // strokeWeight(1);
+      // line(0, 0, scl, 0);
+      // pop();
+    }
+    yOff += inc;
+    zOff += zInc;
+  }
+  for (let i = 0; i < particles.length; i++) {
+    particles[i].follow(flowfield); //particles follow magni of closest vect 
+    particles[i].update();
+    particles[i].edges(); // particles bounce of edges of screen
+    particles[i].show();
+  }
+
+  if (frameCount % runTime == 0) {
+    // background(255);
+    noLoop();
+    print("done painting");
+  }
+
+  // function mousePressed() {
+  //   if (looping == 0) {
+  //     loop();
+  //     looping = 1;
+  //   } else {
+  //     noLoop();
+  //     looping = 0;
+  //   }
+  // }
+}
+
+/* --- seperate script for particle class: --- */
+
+function Particle() {
+  this.pos = createVector(random(width), random(height));
+  this.vel = createVector(0, 0);
+  this.acc = createVector(0, 0);
+  this.maxSpeed = vMaxSpeed;
+  this.prevPos = this.pos.copy();
+
+  this.update = function() {
+    this.vel.add(this.acc);
+    this.vel.limit(this.maxSpeed);
+    this.pos.add(this.vel);
+    this.acc.mult(0);
+  }
+
+  this.follow = function(vectors) {
+    var x = floor(this.pos.x / scl);
+    var y = floor(this.pos.y / scl);
+    var index = x + y * columns;
+    var force = vectors[index];
+    this.applyForce(force);
+  }
+
+
+  this.applyForce = function(force) {
+    this.acc.add(force);
+  }
+
+  this.show = function() {
+    stroke(0, particleOpacity);
+    strokeWeight(particleStroke);
+    line(this.pos.x, this.pos.y, this.prevPos.x, this.prevPos.y)
+    //point(this.pos.x, this.pos.y);
+    this.updatePrev();
+  }
+
+  this.updatePrev = function() {
+    this.prevPos.x = this.pos.x;
+    this.prevPos.y = this.pos.y;
+  }
+  
+  this.edges = function() {
+    if (this.pos.x > width) {
+      this.pos.x = 0;
+      this.updatePrev();
+    }
+    if (this.pos.x < 0) {
+      this.pos.x = width;
+      this.updatePrev();
+    }
+    if (this.pos.y > height) {
+      this.pos.y = 0;
+      this.updatePrev();
+    }
+    if (this.pos.y < 0) {
+      this.pos.y = height;
+      this.updatePrev();
+    }
+  }
+}
