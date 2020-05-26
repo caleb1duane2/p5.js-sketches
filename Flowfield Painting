@@ -36,7 +36,6 @@ function setup() {
   /* --- creates an array for each vector based on the grid ---*/
   flowfield = new Array(columns * rows);
 
-  /* --- to view my custom particle class click on the arrow under play --- */
   for (let i = 0; i < amountOfParticles; i++) {
     particles[i] = new Particle();
   }
